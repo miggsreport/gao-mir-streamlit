@@ -286,6 +286,36 @@ def normalize_topic_name(topic):
             return val
     return topic
 
+def extract_clean_url(text):
+    """Extract clean GAO URL from urldefense-wrapped or plain URLs."""
+    # Look for GAO product URL inside urldefense wrapper
+    urldefense_match = re.search(r'https:?\*2F\*2Fwww\.gao\.gov\*2Fproducts\*2F(GAO-\d+-\d+)', text)
+    if urldefense_match:
+        return f"https://www.gao.gov/products/{urldefense_match.group(1)}"
+    
+    # Look for plain GAO URL
+    plain_match = re.search(r'https://www\.gao\.gov/products/(GAO-\d+-\d+)', text)
+    if plain_match:
+        return f"https://www.gao.gov/products/{plain_match.group(1)}"
+    
+    return None
+
+def clean_date(date_str):
+    """Extract just the date portion, removing any URL or markdown artifacts."""
+    if not date_str:
+        return ""
+    
+    # Remove markdown link syntax and everything after
+    date_str = re.sub(r'\s*\[.*', '', date_str)
+    date_str = re.sub(r'\s*\(http.*', '', date_str)
+    date_str = re.sub(r'\s*http.*', '', date_str)
+    date_str = re.sub(r'\s*\].*', '', date_str)
+    
+    # Clean up any remaining artifacts
+    date_str = date_str.strip().rstrip(',').rstrip('\\').strip()
+    
+    return date_str
+
 def parse_markdown(content):
     """Parse markdown and extract publications. Deduplicates by GAO number."""
     lines = content.split('\n')
@@ -333,31 +363,34 @@ def parse_markdown(content):
             
             title = ' '.join(title_parts)
             
-            # Find GAO number and date
+            # Find GAO number, date, and URL
             gao_num = None
             date = None
             report_url = None
             
-            while i < len(lines):
+            # Search next few lines for metadata
+            search_limit = min(i + 5, len(lines))
+            while i < search_limit:
                 next_line = lines[i].strip()
                 if next_line:
-                    # Look for GAO number
-                    gao_match = re.search(r'(GAO-\d+-\d+),?\s*(.+)?', next_line)
-                    if gao_match:
-                        gao_num = gao_match.group(1)
-                        date = gao_match.group(2) if gao_match.group(2) else ""
+                    # Try to extract URL from this line (handles urldefense)
+                    if not report_url:
+                        report_url = extract_clean_url(next_line)
                     
-                    # Look for report URL
-                    url_match = re.search(r'https://www\.gao\.gov/products/(GAO-\d+-\d+)', next_line)
-                    if url_match:
-                        report_url = f"https://www.gao.gov/products/{url_match.group(1)}"
+                    # Look for GAO number and date
+                    if not gao_num:
+                        gao_match = re.search(r'(GAO-\d+-\d+),?\s*(.+)?', next_line)
+                        if gao_match:
+                            gao_num = gao_match.group(1)
+                            raw_date = gao_match.group(2) if gao_match.group(2) else ""
+                            date = clean_date(raw_date)
+                    
+                    # Stop if we found both GAO number and URL
+                    if gao_num and report_url:
                         i += 1
                         break
-                i += 1
                 
-                # Don't search too far
-                if i > len(lines) - 1:
-                    break
+                i += 1
             
             if gao_num and title:
                 if gao_num in pubs_dict:
@@ -370,7 +403,7 @@ def parse_markdown(content):
                     pubs_dict[gao_num] = {
                         'gao_number': gao_num,
                         'title': title,
-                        'date': date.strip() if date else "",
+                        'date': date if date else "",
                         'current_topics': [current_topic] if current_topic else [],
                         'report_url': report_url or f"https://www.gao.gov/products/{gao_num}",
                         'assigned_topics': [current_topic] if current_topic else [],
