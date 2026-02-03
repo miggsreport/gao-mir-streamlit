@@ -29,67 +29,82 @@ st.markdown("""
     
     /* Reduce default top padding */
     .main .block-container {
-        padding-top: 1.5rem;
+        padding-top: 0.75rem;
+        padding-bottom: 0.5rem;
     }
     
-    /* Header title */
+    /* Reduce spacing between all elements */
+    .element-container {
+        margin-bottom: 0.25rem;
+    }
+    
+    /* Header title - larger */
     .header-title {
         color: #002147;
-        font-size: 2rem;
+        font-size: 2.25rem;
         font-weight: 700;
         margin: 0;
-        margin-bottom: 10px;
+        margin-bottom: 6px;
+    }
+    
+    /* Horizontal rule - tighter */
+    hr {
+        margin-top: 6px;
+        margin-bottom: 8px;
     }
     
     /* Section headers */
     .section-header {
-        font-size: 1.3rem;
+        font-size: 1.2rem;
         font-weight: 600;
         color: #002147;
-        margin-top: 15px;
-        margin-bottom: 8px;
+        margin-top: 8px;
+        margin-bottom: 6px;
     }
     
     /* Publication card */
     .pub-card {
         background: #f8f9fa;
         border-left: 4px solid #3d6a99;
-        padding: 15px;
-        margin-bottom: 15px;
+        padding: 10px 12px;
+        margin-bottom: 8px;
         border-radius: 4px;
     }
     .pub-title {
-        font-size: 1.15rem;
+        font-size: 1.1rem;
         font-weight: 600;
         color: #002147;
-        margin-bottom: 5px;
-        line-height: 1.4;
+        margin-bottom: 4px;
+        line-height: 1.35;
     }
     .pub-meta {
-        font-size: 0.9rem;
+        font-size: 0.85rem;
         color: #666;
-        margin-bottom: 10px;
+        margin-bottom: 0;
     }
     
-    /* Current topics display */
+    /* Current topics display - pill-like sizing */
     .current-topics {
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         color: #856404;
         background: #fff3cd;
-        padding: 8px 12px;
+        padding: 6px 10px;
         border-radius: 4px;
-        margin-bottom: 10px;
+        margin-top: 6px;
+        margin-bottom: 6px;
     }
     
-    /* Button styling - matches AFR */
+    /* Button styling - smaller, pill-like */
     .stButton > button {
         background-color: #3d6a99;
         color: white;
         border: none;
-        padding: 4px 12px;
+        padding: 3px 10px;
         border-radius: 4px;
         font-weight: 500;
-        font-size: 0.9rem;
+        font-size: 0.8rem;
+        min-height: 0;
+        line-height: 1.4;
     }
     .stButton > button:hover {
         background-color: #002147;
@@ -101,15 +116,15 @@ st.markdown("""
         background-color: #002147;
     }
     
-    /* Link button styling */
+    /* Link button styling - smaller */
     .stLinkButton > a {
         background-color: #3d6a99;
         color: white;
         border: none;
-        padding: 4px 12px;
+        padding: 3px 10px;
         border-radius: 4px;
         font-weight: 500;
-        font-size: 0.9rem;
+        font-size: 0.8rem;
         text-decoration: none;
     }
     .stLinkButton > a:hover {
@@ -119,22 +134,35 @@ st.markdown("""
     
     /* Success message */
     .stSuccess {
-        margin-bottom: 8px;
+        margin-bottom: 6px;
+        padding: 8px 12px;
     }
     
-    /* Progress bar height */
+    /* Progress bar */
+    .stProgress {
+        margin-bottom: 2px;
+    }
     .stProgress > div > div {
-        height: 8px;
+        height: 6px;
+    }
+    
+    /* Caption under progress bar */
+    .stCaption {
+        margin-top: 0;
+        margin-bottom: 4px;
     }
     
     /* Multiselect - tighter */
     .stMultiSelect {
-        margin-bottom: 10px;
+        margin-bottom: 6px;
     }
     
-    /* Text area - smaller default */
+    /* Text area - smaller */
+    .stTextArea {
+        margin-bottom: 6px;
+    }
     .stTextArea textarea {
-        min-height: 60px;
+        min-height: 50px;
     }
     
     /* Hide header anchor links */
@@ -172,9 +200,9 @@ st.markdown("""
         border: 1px solid #c3e6cb;
         border-radius: 4px;
         color: #155724;
-        padding: 8px 12px;
-        margin-bottom: 8px;
-        font-size: 0.85rem;
+        padding: 6px 10px;
+        margin-bottom: 6px;
+        font-size: 0.8rem;
         font-weight: 500;
         text-align: center;
     }
@@ -182,7 +210,8 @@ st.markdown("""
     /* Sidebar download button */
     [data-testid="stSidebar"] .stDownloadButton button {
         width: 100%;
-        font-size: 0.85rem;
+        font-size: 0.8rem;
+        padding: 3px 10px;
     }
 </style>
 """, unsafe_allow_html=True)
