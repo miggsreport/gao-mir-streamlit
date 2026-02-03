@@ -1,9 +1,14 @@
+"""
+GAO Month in Review - Topic Assignment Tool
+Clean rewrite matching AFR Demo styling
+"""
 import streamlit as st
 import pandas as pd
 import re
 import subprocess
 import tempfile
 import os
+import json
 from io import BytesIO
 
 # =============================================================================
@@ -16,33 +21,67 @@ st.set_page_config(
 )
 
 # =============================================================================
-# CUSTOM CSS - EXACT AFR COPY
+# CUSTOM CSS - Clean AFR-style approach
 # =============================================================================
 st.markdown("""
 <style>
-    /* Header styling - title and badge inline */
-    .header-row {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        margin-bottom: 10px;
+    /* ===== MAIN CONTENT AREA ===== */
+    
+    /* Reduce default top padding */
+    .main .block-container {
+        padding-top: 1.5rem;
     }
+    
+    /* Header title */
     .header-title {
         color: #002147;
         font-size: 2rem;
         font-weight: 700;
         margin: 0;
+        margin-bottom: 10px;
     }
     
-    /* Section header styling */
+    /* Section headers */
     .section-header {
         font-size: 1.3rem;
         font-weight: 600;
         color: #002147;
+        margin-top: 15px;
         margin-bottom: 8px;
     }
     
-    /* Button styling to match AFR */
+    /* Publication card */
+    .pub-card {
+        background: #f8f9fa;
+        border-left: 4px solid #3d6a99;
+        padding: 15px;
+        margin-bottom: 15px;
+        border-radius: 4px;
+    }
+    .pub-title {
+        font-size: 1.15rem;
+        font-weight: 600;
+        color: #002147;
+        margin-bottom: 5px;
+        line-height: 1.4;
+    }
+    .pub-meta {
+        font-size: 0.9rem;
+        color: #666;
+        margin-bottom: 10px;
+    }
+    
+    /* Current topics display */
+    .current-topics {
+        font-size: 0.85rem;
+        color: #856404;
+        background: #fff3cd;
+        padding: 8px 12px;
+        border-radius: 4px;
+        margin-bottom: 10px;
+    }
+    
+    /* Button styling - matches AFR */
     .stButton > button {
         background-color: #3d6a99;
         color: white;
@@ -57,134 +96,99 @@ st.markdown("""
         color: white;
     }
     
-    /* Success message styling */
+    /* Primary button */
+    .stButton > button[kind="primary"] {
+        background-color: #002147;
+    }
+    
+    /* Link button styling */
+    .stLinkButton > a {
+        background-color: #3d6a99;
+        color: white;
+        border: none;
+        padding: 4px 12px;
+        border-radius: 4px;
+        font-weight: 500;
+        font-size: 0.9rem;
+        text-decoration: none;
+    }
+    .stLinkButton > a:hover {
+        background-color: #002147;
+        color: white;
+    }
+    
+    /* Success message */
     .stSuccess {
         margin-bottom: 8px;
     }
     
-    /* Sidebar - compressed */
-    [data-testid="stSidebar"] {
-        padding-top: 1rem !important;
+    /* Progress bar height */
+    .stProgress > div > div {
+        height: 8px;
     }
-    [data-testid="stSidebar"] .element-container {
-        margin-bottom: 0.1rem !important;
+    
+    /* Multiselect - tighter */
+    .stMultiSelect {
+        margin-bottom: 10px;
+    }
+    
+    /* Text area - smaller default */
+    .stTextArea textarea {
+        min-height: 60px;
+    }
+    
+    /* Hide header anchor links */
+    h1 button, h2 button, h3 button {
+        display: none;
+    }
+    
+    /* ===== SIDEBAR ===== */
+    
+    [data-testid="stSidebar"] {
+        padding-top: 1rem;
+    }
+    [data-testid="stSidebar"] .block-container {
+        padding-top: 0;
     }
     [data-testid="stSidebar"] h2 {
-        font-size: 1.1rem !important;
-        margin-bottom: 0.25rem !important;
-        margin-top: 0 !important;
+        font-size: 1.1rem;
+        margin-bottom: 0.5rem;
+        margin-top: 0;
     }
     [data-testid="stSidebar"] p {
-        margin-bottom: 0.15rem !important;
-        margin-top: 0 !important;
-        font-size: 0.85rem !important;
+        font-size: 0.85rem;
+        margin-bottom: 0.25rem;
     }
     [data-testid="stSidebar"] hr {
-        margin: 0.3rem 0 !important;
+        margin: 0.5rem 0;
+    }
+    [data-testid="stSidebar"] .stProgress {
+        margin-bottom: 0.5rem;
     }
     
-    /* File uploader */
-    [data-testid="stSidebar"] .stFileUploader {
-        margin-bottom: 0.15rem !important;
-    }
-    [data-testid="stSidebar"] .stFileUploader label {
-        font-size: 0.85rem !important;
-        font-weight: 500 !important;
-        margin-bottom: 0.2rem !important;
-        text-align: left !important;
-    }
-    [data-testid="stSidebar"] .stFileUploader section {
-        text-align: center !important;
-        display: block !important;
-    }
-    [data-testid="stSidebar"] .stFileUploader section button {
-        width: 100% !important;
-        display: block !important;
-    }
-    [data-testid="stSidebar"] .stFileUploader [data-testid="stFileUploaderFileName"] {
-        font-size: 0.85rem !important;
-        padding-top: 0.4rem !important;
-        padding-bottom: 0.4rem !important;
-    }
-    [data-testid="stSidebar"] .stFileUploader button {
-        padding: 0.35rem 0.5rem !important;
-        font-size: 0.85rem !important;
-        width: 100% !important;
-        text-align: center !important;
-        font-weight: 500 !important;
-        line-height: 1.5 !important;
-        min-height: 2.5rem !important;
+    /* Sidebar status box */
+    .sidebar-status {
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+        border-radius: 4px;
+        color: #155724;
+        padding: 8px 12px;
+        margin-bottom: 8px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        text-align: center;
     }
     
-    /* Custom status box */
-    [data-testid="stSidebar"] .custom-status-box {
-        background-color: #d4edda !important;
-        border: 1px solid #c3e6cb !important;
-        border-radius: 0.25rem !important;
-        color: #155724 !important;
-        padding: 0.35rem 0.5rem !important;
-        margin-bottom: 0.2rem !important;
-        margin-top: 0.15rem !important;
-        font-size: 0.85rem !important;
-        font-weight: 500 !important;
-        text-align: center !important;
-        line-height: 1.5 !important;
-        min-height: 2.5rem !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-    }
-    
-    /* Download button */
-    [data-testid="stSidebar"] .stDownloadButton {
-        margin-top: 0.15rem !important;
-        margin-bottom: 0.15rem !important;
-    }
+    /* Sidebar download button */
     [data-testid="stSidebar"] .stDownloadButton button {
-        padding: 0.35rem 0.5rem !important;
-        font-size: 0.85rem !important;
-        width: 100% !important;
-        text-align: center !important;
-        font-weight: 500 !important;
-        line-height: 1.5 !important;
-        min-height: 2.5rem !important;
-    }
-    [data-testid="stSidebar"] .stDownloadButton button svg {
-        display: none !important;
+        width: 100%;
+        font-size: 0.85rem;
     }
 </style>
-
-<script>
-// Auto-save to localStorage after each publication
-function autoSaveToLocalStorage(publications, currentIndex) {
-    const saveData = {
-        publications: publications,
-        currentIndex: currentIndex,
-        timestamp: new Date().toISOString()
-    };
-    localStorage.setItem('gao_mir_autosave', JSON.stringify(saveData));
-    console.log('Auto-saved to localStorage:', currentIndex);
-}
-
-// Load from localStorage on page load
-function loadFromLocalStorage() {
-    const saved = localStorage.getItem('gao_mir_autosave');
-    if (saved) {
-        return JSON.parse(saved);
-    }
-    return null;
-}
-
-// Clear localStorage
-function clearAutoSave() {
-    localStorage.removeItem('gao_mir_autosave');
-    console.log('Auto-save cleared from localStorage');
-}
-</script>
 """, unsafe_allow_html=True)
 
 # =============================================================================
-# CONFIGURATION
+# CONFIGURATION - Topics
 # =============================================================================
 ALL_TOPICS = [
     "Agriculture and Food",
@@ -222,6 +226,7 @@ ALL_TOPICS = [
     "Worker & Family Assistance"
 ]
 
+# Mapping from PoolParty format to official GAO names
 TOPIC_MAP = {
     "AGRICULTURE AND FOOD": "Agriculture and Food",
     "AUDITING AND FINANCIAL MANAGEMENT": "Auditing & Financial Mgmt",
@@ -272,12 +277,18 @@ def normalize_topic_name(topic):
     """Normalize topic name from markdown to official GAO format."""
     if not topic:
         return topic
-    return TOPIC_MAP.get(topic, topic)
+    upper = topic.upper().strip()
+    if upper in TOPIC_MAP:
+        return TOPIC_MAP[upper]
+    # Try partial match
+    for key, val in TOPIC_MAP.items():
+        if upper == key or topic == val:
+            return val
+    return topic
 
 def parse_markdown(content):
-    """Parse markdown content and extract publications."""
+    """Parse markdown and extract publications. Deduplicates by GAO number."""
     lines = content.split('\n')
-    
     current_topic = None
     pubs_dict = {}
     
@@ -285,47 +296,44 @@ def parse_markdown(content):
     while i < len(lines):
         line = lines[i].strip()
         
-        if re.match(r'^\*\*[A-Z][A-Z\s&]+\*\*\\$', line):
+        # Check for topic header (ALL CAPS in bold)
+        if re.match(r'^\*\*[A-Z][A-Z\s&]+\*\*\\?$', line):
             raw_topic = line.replace('**', '').replace('\\', '').strip()
             current_topic = normalize_topic_name(raw_topic)
             i += 1
             continue
         
+        # Check for publication title (bold, not a topic header)
         if (line.startswith('**') and 
-            not re.match(r'^\*\*[A-Z][A-Z\s&]+\*\*\\$', line) and
+            not re.match(r'^\*\*[A-Z][A-Z\s&]+\*\*\\?$', line) and
             'Month in Review' not in line and
             'LEGAL PRODUCTS' not in line):
             
-            # Collect title - may span multiple lines
-            # First line starts with **, subsequent lines may not
+            # Collect multi-line title
             title_parts = []
-            in_title = True
-            
-            while i < len(lines) and in_title:
+            while i < len(lines):
                 title_line = lines[i].strip()
-                
                 if not title_line:
                     break
                 
-                # Check if this is the GAO metadata line (don't include in title)
+                # Check if this is the GAO metadata line
                 if re.match(r'GAO-\d+-\d+', title_line):
                     break
                 
                 # Remove markdown formatting
                 clean = title_line.replace('**', '').replace('\\', '').strip()
-                
-                if clean:  # Only add non-empty parts
+                if clean:
                     title_parts.append(clean)
                 
-                # Check if this line ends the title
-                if title_line.endswith('**\\'):
-                    i += 1
-                    break
-                
                 i += 1
+                
+                # Check if title block ended
+                if title_line.endswith('**\\') or title_line.endswith('**'):
+                    break
             
             title = ' '.join(title_parts)
             
+            # Find GAO number and date
             gao_num = None
             date = None
             report_url = None
@@ -333,112 +341,124 @@ def parse_markdown(content):
             while i < len(lines):
                 next_line = lines[i].strip()
                 if next_line:
-                    gao_match = re.search(r'(GAO-\d+-\d+),\s*(.+)', next_line)
+                    # Look for GAO number
+                    gao_match = re.search(r'(GAO-\d+-\d+),?\s*(.+)?', next_line)
                     if gao_match:
                         gao_num = gao_match.group(1)
-                        date = gao_match.group(2)
+                        date = gao_match.group(2) if gao_match.group(2) else ""
                     
+                    # Look for report URL
                     url_match = re.search(r'https://www\.gao\.gov/products/(GAO-\d+-\d+)', next_line)
                     if url_match:
                         report_url = f"https://www.gao.gov/products/{url_match.group(1)}"
+                        i += 1
                         break
                 i += 1
+                
+                # Don't search too far
+                if i > len(lines) - 1:
+                    break
             
-            if gao_num:
+            if gao_num and title:
                 if gao_num in pubs_dict:
+                    # Add topic to existing publication
                     if current_topic and current_topic not in pubs_dict[gao_num]['current_topics']:
                         pubs_dict[gao_num]['current_topics'].append(current_topic)
+                        pubs_dict[gao_num]['assigned_topics'].append(current_topic)
                 else:
+                    # New publication
                     pubs_dict[gao_num] = {
                         'gao_number': gao_num,
                         'title': title,
-                        'date': date,
+                        'date': date.strip() if date else "",
                         'current_topics': [current_topic] if current_topic else [],
                         'report_url': report_url or f"https://www.gao.gov/products/{gao_num}",
+                        'assigned_topics': [current_topic] if current_topic else [],
                         'notes': ''
                     }
+            continue
         
         i += 1
     
+    # Convert to sorted list
     publications = [pubs_dict[gao] for gao in sorted(pubs_dict.keys())]
     return publications
 
-def create_markdown_output(publications, all_topics):
-    """Create markdown document from reviewed publications."""
-    md_lines = []
-    md_lines.append("**GAO Month in Review**\n")
-    md_lines.append("Month YYYY\\\n\\")
-    md_lines.append("")
+def create_markdown_output(publications, topics):
+    """Create markdown output organized by topic."""
+    output_lines = ["# GAO Month in Review - Updated Topic Assignments\n"]
     
-    topics_dict = {}
+    # Group publications by assigned topic
+    topic_pubs = {topic: [] for topic in topics}
+    
     for pub in publications:
-        assigned = pub.get('assigned_topics', pub['current_topics'])
-        for topic in assigned:
-            if topic not in topics_dict:
-                topics_dict[topic] = []
-            topics_dict[topic].append(pub)
+        for topic in pub.get('assigned_topics', []):
+            if topic in topic_pubs:
+                topic_pubs[topic].append(pub)
     
-    for topic in all_topics:
-        if topic not in topics_dict or not topics_dict[topic]:
-            continue
-        
-        md_lines.append(f"**{topic.upper()}**\\\n\\")
-        
-        pubs = sorted(topics_dict[topic], key=lambda x: x['title'])
-        
-        for pub in pubs:
-            md_lines.append(f"**{pub['title']}**\\")
-            md_lines.append(f"{pub['gao_number']}, {pub['date']}\n")
-            md_lines.append(f"-   Report: [https://www.gao.gov/products/{pub['gao_number']}](https://www.gao.gov/products/{pub['gao_number']})\n")
+    # Output each topic section
+    for topic in topics:
+        pubs = topic_pubs[topic]
+        if pubs:
+            output_lines.append(f"\n## {topic}\n")
+            for pub in pubs:
+                output_lines.append(f"**{pub['title']}**\\")
+                output_lines.append(f"{pub['gao_number']}, {pub['date']}")
+                output_lines.append(f"<{pub['report_url']}>\n")
     
-    return '\n'.join(md_lines)
+    return '\n'.join(output_lines)
+
+def get_progress_csv():
+    """Generate CSV of current progress."""
+    if not st.session_state.publications:
+        return ""
+    
+    df_data = []
+    for pub in st.session_state.publications:
+        df_data.append({
+            'gao_number': pub['gao_number'],
+            'title': pub['title'],
+            'date': pub['date'],
+            'original_topics': ' | '.join(pub['current_topics']),
+            'assigned_topics': ' | '.join(pub.get('assigned_topics', pub['current_topics'])),
+            'notes': pub.get('notes', '')
+        })
+    
+    df = pd.DataFrame(df_data)
+    return df.to_csv(index=False)
 
 # =============================================================================
-# SIDEBAR - File Upload
+# SIDEBAR
 # =============================================================================
 with st.sidebar:
-    st.header("Document Management")
+    st.header("Document")
     
     uploaded_file = st.file_uploader(
-        "Upload Month in Review", 
+        "Upload Month in Review",
         type=['docx', 'md'],
-        help="Upload document (.docx or .md)",
+        help="Upload .docx or .md file",
+        label_visibility="collapsed"
     )
     
     if st.session_state.publications:
-        st.markdown("---")
-        
-        # Combined section header - use custom styled div instead of st.success
-        st.markdown(
-            '<div class="custom-status-box">Document Loaded</div>',
-            unsafe_allow_html=True
-        )
-        st.markdown("**Backup Options**")
-        st.caption("✓ Auto-saved to browser after each publication")
-        
+        st.markdown(f'<div class="sidebar-status">✓ Document Loaded</div>', unsafe_allow_html=True)
         st.markdown(f"**File:** {st.session_state.loaded_file}")
+        st.markdown(f"**Publications:** {len(st.session_state.publications)}")
         
-        # Create CSV with current state
-        df_data = []
-        for pub in st.session_state.publications:
-            df_data.append({
-                'gao_number': pub['gao_number'],
-                'title': pub['title'],
-                'date': pub['date'],
-                'original_topics': ' | '.join(pub['current_topics']),
-                'assigned_topics': ' | '.join(pub.get('assigned_topics', pub['current_topics'])),
-                'notes': pub.get('notes', '')
-            })
+        # Progress
+        progress_pct = int((st.session_state.current_index / len(st.session_state.publications)) * 100)
+        st.markdown(f"**Progress:** {st.session_state.current_index} / {len(st.session_state.publications)} ({progress_pct}%)")
+        st.progress(st.session_state.current_index / len(st.session_state.publications))
         
-        df = pd.DataFrame(df_data)
-        csv = df.to_csv(index=False)
+        st.markdown("---")
+        st.markdown("**Backup**")
         
+        csv = get_progress_csv()
         st.download_button(
-            "⬇ Download Current Progress",
+            "⬇ Download Progress",
             csv,
             f"progress_{st.session_state.current_index}_of_{len(st.session_state.publications)}.csv",
             "text/csv",
-            help="Manual backup - download work to your computer",
             use_container_width=True
         )
 
@@ -450,6 +470,7 @@ if uploaded_file and (not st.session_state.loaded_file or st.session_state.loade
         markdown_content = None
         
         if uploaded_file.name.endswith('.docx'):
+            # Convert Word to Markdown using Pandoc
             with tempfile.NamedTemporaryFile(delete=False, suffix='.docx') as tmp_docx:
                 tmp_docx.write(uploaded_file.read())
                 tmp_docx_path = tmp_docx.name
@@ -475,10 +496,10 @@ if uploaded_file and (not st.session_state.loaded_file or st.session_state.loade
                 st.error(f"Error converting document: {e.stderr.decode()}")
                 st.stop()
             except FileNotFoundError:
-                st.error("Pandoc not found.")
-                st.info("For Streamlit Cloud: Ensure packages.txt contains 'pandoc'")
+                st.error("Pandoc not found. Ensure packages.txt contains 'pandoc'")
                 st.stop()
         else:
+            # Already markdown
             markdown_content = uploaded_file.read().decode('utf-8')
         
         if markdown_content:
@@ -489,53 +510,40 @@ if uploaded_file and (not st.session_state.loaded_file or st.session_state.loade
             st.rerun()
 
 # =============================================================================
-# HEADER
-# =============================================================================
-st.markdown('<p class="header-title">Month in Review - Topic Assignment</p>', unsafe_allow_html=True)
-st.markdown("---")
-
-# =============================================================================
 # MAIN CONTENT
 # =============================================================================
+
+# Header
+st.markdown('<p class="header-title">Month in Review: Topic Assignment</p>', unsafe_allow_html=True)
+st.markdown("---")
+
+# State: No document loaded
 if st.session_state.publications is None:
-    st.info("No document loaded. Please upload a file using the sidebar.")
+    st.info("No document loaded. Upload a file using the sidebar.")
     
     st.markdown('<p class="section-header">Getting Started</p>', unsafe_allow_html=True)
     st.markdown("""
     **What this tool does:**
-    
     - Review publications one at a time
-    - Assign to topic areas
-    - Auto-save after each publication
+    - Assign to GAO topic areas
+    - Auto-saves progress to browser
     - Download results as CSV or Markdown
     
-    **Supported formats**: .docx, .md
+    **Supported formats:** .docx, .md
     
-    **To begin**: Open the sidebar and upload your document.
+    **To begin:** Upload your Month in Review document in the sidebar.
     """)
 
+# State: Review complete
 elif st.session_state.current_index >= len(st.session_state.publications):
     st.success(f"✓ Review Complete! {len(st.session_state.publications)} publications reviewed.")
     
     st.markdown('<p class="section-header">Download Results</p>', unsafe_allow_html=True)
     
-    df_data = []
-    for pub in st.session_state.publications:
-        df_data.append({
-            'gao_number': pub['gao_number'],
-            'title': pub['title'],
-            'date': pub['date'],
-            'original_topics': ' | '.join(pub['current_topics']),
-            'assigned_topics': ' | '.join(pub.get('assigned_topics', pub['current_topics'])),
-            'notes': pub.get('notes', '')
-        })
-    
-    df = pd.DataFrame(df_data)
-    
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        csv = df.to_csv(index=False)
+        csv = get_progress_csv()
         st.download_button(
             "Download CSV",
             csv,
@@ -561,52 +569,57 @@ elif st.session_state.current_index >= len(st.session_state.publications):
             st.session_state.loaded_file = None
             st.rerun()
     
-    with st.expander("📊 View Changes"):
-        changes = []
-        for pub in st.session_state.publications:
-            orig = set(pub['current_topics'])
-            assigned = set(pub.get('assigned_topics', pub['current_topics']))
-            
-            added = assigned - orig
-            removed = orig - assigned
-            
-            for topic in added:
-                changes.append(f"➕ ADDED: {pub['gao_number']} → {topic}")
-            for topic in removed:
-                changes.append(f"➖ REMOVED: {pub['gao_number']} from {topic}")
+    # Show changes summary
+    st.markdown('<p class="section-header">Changes Summary</p>', unsafe_allow_html=True)
+    
+    changes = []
+    for pub in st.session_state.publications:
+        orig = set(pub['current_topics'])
+        assigned = set(pub.get('assigned_topics', pub['current_topics']))
         
-        if changes:
-            st.write(f"**{len(changes)} changes:**")
-            for change in changes:
-                st.text(change)
-        else:
-            st.info("No changes made")
+        added = assigned - orig
+        removed = orig - assigned
+        
+        for topic in added:
+            changes.append(f"➕ {pub['gao_number']} → {topic}")
+        for topic in removed:
+            changes.append(f"➖ {pub['gao_number']} removed from {topic}")
+    
+    if changes:
+        st.markdown(f"**{len(changes)} changes made:**")
+        for change in changes:
+            st.text(change)
+    else:
+        st.info("No changes made to topic assignments.")
 
+# State: Reviewing publications
 else:
     pub = st.session_state.publications[st.session_state.current_index]
-    
-    # Progress info above progress bar
-    progress_pct = int((st.session_state.current_index / len(st.session_state.publications)) * 100)
-    col_a, col_b = st.columns(2)
-    with col_a:
-        st.caption(f"**Publications:** {len(st.session_state.publications)}")
-    with col_b:
-        st.caption(f"**Progress:** {st.session_state.current_index} / {len(st.session_state.publications)} ({progress_pct}%)")
+    idx = st.session_state.current_index
+    total = len(st.session_state.publications)
     
     # Progress bar
-    progress = st.session_state.current_index / len(st.session_state.publications)
-    st.progress(progress)
+    st.progress(idx / total)
+    st.caption(f"Publication {idx + 1} of {total}")
     
-    st.markdown(f'<div class="pub-card">', unsafe_allow_html=True)
-    st.markdown(f'<div class="pub-title">{pub["title"]}</div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="pub-meta">{pub["gao_number"]} • {pub["date"]}</div>', unsafe_allow_html=True)
+    # Publication card
+    st.markdown(f'''
+    <div class="pub-card">
+        <div class="pub-title">{pub["title"]}</div>
+        <div class="pub-meta">{pub["gao_number"]} • {pub["date"]}</div>
+    </div>
+    ''', unsafe_allow_html=True)
     
-    # Just the Open Report button
-    st.link_button("Open Report in Browser", pub['report_url'], use_container_width=False)
+    # Open report button
+    st.link_button("Open Report in Browser", pub['report_url'])
     
-    st.markdown('</div>', unsafe_allow_html=True)
+    # Current topics info
+    if pub['current_topics']:
+        topics_str = ", ".join(pub['current_topics'])
+        st.markdown(f'<div class="current-topics"><strong>Original topics:</strong> {topics_str}</div>', unsafe_allow_html=True)
     
-    st.markdown('<p class="section-header">Select Topics</p>', unsafe_allow_html=True)
+    # Topic selection
+    st.markdown('<p class="section-header">Assign Topics</p>', unsafe_allow_html=True)
     
     current_assigned = pub.get('assigned_topics', pub['current_topics'])
     
@@ -617,6 +630,7 @@ else:
         label_visibility="collapsed"
     )
     
+    # Notes
     notes = st.text_area(
         "Notes (optional)",
         value=pub.get('notes', ''),
@@ -624,34 +638,44 @@ else:
         placeholder="Add comments or questions..."
     )
     
-    col1, col2, col3 = st.columns([1, 1, 1.5])
+    # Navigation buttons
+    col1, col2, col3 = st.columns(3)
     
     with col1:
-        if st.button("⬅ Previous", disabled=st.session_state.current_index == 0, use_container_width=True):
-            st.session_state.publications[st.session_state.current_index]['assigned_topics'] = selected_topics
-            st.session_state.publications[st.session_state.current_index]['notes'] = notes
+        if st.button("⬅ Previous", disabled=(idx == 0), use_container_width=True):
+            # Save current before moving
+            st.session_state.publications[idx]['assigned_topics'] = selected_topics
+            st.session_state.publications[idx]['notes'] = notes
             st.session_state.current_index -= 1
+            st.rerun()
     
     with col2:
         if st.button("No Changes →", use_container_width=True):
-            st.session_state.publications[st.session_state.current_index]['assigned_topics'] = selected_topics
-            st.session_state.publications[st.session_state.current_index]['notes'] = notes
+            # Save current and move next
+            st.session_state.publications[idx]['assigned_topics'] = selected_topics
+            st.session_state.publications[idx]['notes'] = notes
             st.session_state.current_index += 1
+            st.rerun()
     
     with col3:
         if st.button("✓ Save & Next", type="primary", use_container_width=True):
-            st.session_state.publications[st.session_state.current_index]['assigned_topics'] = selected_topics
-            st.session_state.publications[st.session_state.current_index]['notes'] = notes
+            # Save current and move next
+            st.session_state.publications[idx]['assigned_topics'] = selected_topics
+            st.session_state.publications[idx]['notes'] = notes
             st.session_state.current_index += 1
+            st.rerun()
     
-    # Auto-save to browser localStorage after any button click
-    import json
+    # Auto-save to localStorage
     publications_json = json.dumps(st.session_state.publications)
-    st.components.v1.html(
-        f"""
-        <script>
-        autoSaveToLocalStorage({publications_json}, {st.session_state.current_index});
-        </script>
-        """,
-        height=0
-    )
+    st.components.v1.html(f"""
+    <script>
+    (function() {{
+        const saveData = {{
+            publications: {publications_json},
+            currentIndex: {st.session_state.current_index},
+            timestamp: new Date().toISOString()
+        }};
+        localStorage.setItem('gao_mir_autosave', JSON.stringify(saveData));
+    }})();
+    </script>
+    """, height=0)
