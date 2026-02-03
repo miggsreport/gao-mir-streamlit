@@ -111,21 +111,25 @@ st.markdown("""
         background-color: #002147;
     }
     
-    /* Link button styling - match regular buttons exactly */
-    .stLinkButton a {
-        background-color: #3d6a99 !important;
+    /* Custom link button - matches regular buttons exactly */
+    .custom-link-button {
+        background-color: #3d6a99;
         color: white !important;
-        border: none !important;
-        padding: 3px 10px !important;
-        border-radius: 4px !important;
-        font-weight: 500 !important;
-        font-size: 0.8rem !important;
-        text-decoration: none !important;
+        border: none;
+        padding: 3px 10px;
+        border-radius: 4px;
+        font-weight: 500;
+        font-size: 0.8rem;
+        text-decoration: none;
         line-height: 1.4;
+        display: inline-block;
+        margin-top: 8px;
+        margin-bottom: 8px;
     }
-    .stLinkButton a:hover {
-        background-color: #002147 !important;
+    .custom-link-button:hover {
+        background-color: #002147;
         color: white !important;
+        text-decoration: none;
     }
     
     /* Success message */
@@ -655,8 +659,10 @@ else:
     </div>
     ''', unsafe_allow_html=True)
     
-    # Open report button
-    st.link_button("Open Report in Browser", pub['report_url'])
+    # Open report button - using HTML for consistent styling
+    st.markdown(f'''
+    <a href="{pub['report_url']}" target="_blank" class="custom-link-button">Open Report in Browser</a>
+    ''', unsafe_allow_html=True)
     
     # Current topics info
     if pub['current_topics']:
