@@ -111,20 +111,21 @@ st.markdown("""
         background-color: #002147;
     }
     
-    /* Custom link button - matches regular buttons exactly */
+    /* Custom link button - matches navigation buttons visually */
     .custom-link-button {
         background-color: #3d6a99;
         color: white !important;
         border: none;
-        padding: 3px 10px;
+        padding: 6px 14px;
         border-radius: 4px;
         font-weight: 500;
-        font-size: 0.8rem;
+        font-size: 0.875rem;
         text-decoration: none;
-        line-height: 1.4;
+        line-height: 1.5;
         display: inline-block;
         margin-top: 8px;
         margin-bottom: 8px;
+        cursor: pointer;
     }
     .custom-link-button:hover {
         background-color: #002147;
