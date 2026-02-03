@@ -29,23 +29,8 @@ st.markdown("""
     
     /* Reduce default top padding */
     .main .block-container {
-        padding-top: 0.5rem;
+        padding-top: 0.75rem;
         padding-bottom: 0.5rem;
-    }
-    
-    /* Reduce gaps in vertical blocks */
-    [data-testid="stVerticalBlock"] {
-        gap: 0.15rem !important;
-    }
-    
-    /* Reduce spacing between all elements */
-    .element-container {
-        margin-bottom: 0.15rem !important;
-    }
-    
-    /* Extra tight spacing for elements right after header */
-    [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlockBorderWrapper"]:first-child {
-        margin-bottom: 0 !important;
     }
     
     /* Header title - larger */
@@ -53,29 +38,14 @@ st.markdown("""
         color: #002147;
         font-size: 2.25rem;
         font-weight: 700;
-        margin: 0 !important;
-        padding: 0 !important;
-        margin-bottom: 2px !important;
+        margin: 0;
+        margin-bottom: 4px;
     }
     
-    /* Horizontal rule - much tighter */
+    /* Horizontal rule - tighter */
     hr {
-        margin-top: 2px !important;
-        margin-bottom: 4px !important;
-    }
-    
-    /* Markdown paragraphs - reduce default margins */
-    .stMarkdown p {
-        margin-bottom: 0.25rem;
-    }
-    
-    /* Reduce spacing around horizontal dividers */
-    [data-testid="stMarkdownContainer"] hr {
-        margin-top: 2px !important;
-        margin-bottom: 4px !important;
-    }
-    [data-testid="stMarkdownContainer"]:has(hr) {
-        margin-bottom: 0 !important;
+        margin-top: 4px;
+        margin-bottom: 6px;
     }
     
     /* Section headers */
@@ -151,7 +121,6 @@ st.markdown("""
         font-weight: 500 !important;
         font-size: 0.8rem !important;
         text-decoration: none !important;
-        display: inline-block;
         line-height: 1.4;
     }
     .stLinkButton a:hover {
@@ -166,23 +135,8 @@ st.markdown("""
     }
     
     /* Progress bar */
-    .stProgress {
-        margin-top: 0 !important;
-        margin-bottom: 0 !important;
-    }
     .stProgress > div > div {
         height: 6px;
-    }
-    
-    /* Caption under progress bar */
-    .stCaption {
-        margin-top: 0 !important;
-        margin-bottom: 2px !important;
-        padding-top: 0 !important;
-    }
-    [data-testid="stCaptionContainer"] {
-        margin-top: 0 !important;
-        margin-bottom: 2px !important;
     }
     
     /* Multiselect - tighter */
