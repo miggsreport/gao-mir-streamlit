@@ -480,23 +480,27 @@ def create_markdown_output(publications, topics):
     return '\n'.join(output_lines)
 
 def get_progress_csv():
-    """Generate CSV of current progress with additional topics in separate columns."""
+    """Generate CSV of current progress with additional and removed topics in separate columns."""
     if not st.session_state.publications:
         return ""
     
-    # First pass: find max number of additional topics across all pubs
+    # First pass: find max number of additional and removed topics across all pubs
     max_additional = 0
+    max_removed = 0
     for pub in st.session_state.publications:
         original = set(pub['current_topics'])
         assigned = set(pub.get('assigned_topics', pub['current_topics']))
         additional = assigned - original
+        removed = original - assigned
         max_additional = max(max_additional, len(additional))
+        max_removed = max(max_removed, len(removed))
     
     df_data = []
     for i, pub in enumerate(st.session_state.publications):
         original = set(pub['current_topics'])
         assigned = set(pub.get('assigned_topics', pub['current_topics']))
         additional = sorted(assigned - original)  # Topics that were added
+        removed = sorted(original - assigned)      # Topics that were removed
         
         row = {
             'gao_number': pub['gao_number'],
@@ -511,6 +515,11 @@ def get_progress_csv():
         for j in range(max_additional):
             col_name = f'additional_topic{j + 1}'
             row[col_name] = additional[j] if j < len(additional) else ""
+        
+        # Add columns for removed topics
+        for j in range(max_removed):
+            col_name = f'removed_topic{j + 1}'
+            row[col_name] = removed[j] if j < len(removed) else ""
         
         df_data.append(row)
     
