@@ -789,15 +789,34 @@ else:
     <a href="{pub['report_url']}" target="_blank" class="custom-link-button">Open Report in Browser</a>
     ''', unsafe_allow_html=True)
     
+    # Helper to normalize old format topic names
+    OLD_TO_NEW = {
+        "Auditing & Financial Mgmt": "Auditing & Financial Management",
+        "CORONAVIRUS OVERSIGHT": "Coronavirus Oversight",
+    }
+    
+    def normalize_display_topic(topic):
+        if topic in OLD_TO_NEW:
+            return OLD_TO_NEW[topic]
+        return topic
+    
     # Current topics info
     if pub['current_topics']:
-        topics_str = ", ".join(pub['current_topics'])
+        normalized_topics = [normalize_display_topic(t) for t in pub['current_topics']]
+        topics_str = ", ".join(normalized_topics)
         st.markdown(f'<div class="current-topics"><strong>Original topics:</strong> {topics_str}</div>', unsafe_allow_html=True)
     
     # Topic selection
     st.markdown('<p class="section-header">Assign Topics</p>', unsafe_allow_html=True)
     
-    current_assigned = pub.get('assigned_topics', pub['current_topics'])
+    # Get assigned topics and filter to only valid ones (handles old format names)
+    raw_assigned = pub.get('assigned_topics', pub['current_topics'])
+    
+    current_assigned = []
+    for topic in raw_assigned:
+        normalized = normalize_display_topic(topic)
+        if normalized in ALL_TOPICS:
+            current_assigned.append(normalized)
     
     selected_topics = st.multiselect(
         "Select all applicable topics",
