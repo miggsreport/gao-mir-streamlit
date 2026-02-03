@@ -290,6 +290,8 @@ if 'current_index' not in st.session_state:
     st.session_state.current_index = 0
 if 'loaded_file' not in st.session_state:
     st.session_state.loaded_file = None
+if 'restore_message' not in st.session_state:
+    st.session_state.restore_message = None
 
 # =============================================================================
 # HELPER FUNCTIONS
@@ -554,23 +556,35 @@ with st.sidebar:
             # Reconstruct publications from CSV
             restored_pubs = []
             resume_index = 0
+            has_reviewed_col = 'reviewed' in df.columns
+            has_assigned_col = 'assigned_topics' in df.columns  # Old format
             
             for i, row in df.iterrows():
                 # Parse original topics
                 original = row['original_topics'].split(' | ') if pd.notna(row['original_topics']) and row['original_topics'] else []
                 
-                # Collect additional topics from columns
-                additional = []
-                for col in df.columns:
-                    if col.startswith('additional_topic') and pd.notna(row[col]) and row[col]:
-                        additional.append(row[col])
+                # Get assigned topics - handle both old and new CSV formats
+                if has_assigned_col:
+                    # Old format: assigned_topics is a pipe-separated string
+                    assigned_str = row['assigned_topics'] if pd.notna(row['assigned_topics']) else ""
+                    assigned = assigned_str.split(' | ') if assigned_str else original.copy()
+                else:
+                    # New format: original + additional_topic columns
+                    additional = []
+                    for col in df.columns:
+                        if col.startswith('additional_topic') and pd.notna(row[col]) and row[col]:
+                            additional.append(row[col])
+                    assigned = original + additional
                 
-                # Assigned = original + additional
-                assigned = original + additional
-                
-                # Track if reviewed
-                if 'reviewed' in df.columns and pd.notna(row['reviewed']) and row['reviewed'] == 'Y':
-                    resume_index = i + 1
+                # Track where to resume
+                if has_reviewed_col:
+                    if pd.notna(row['reviewed']) and row['reviewed'] == 'Y':
+                        resume_index = i + 1
+                else:
+                    # Fallback: if assigned differs from original or has notes, consider reviewed
+                    has_changes = (set(assigned) != set(original)) or (pd.notna(row.get('notes', '')) and row.get('notes', ''))
+                    if has_changes:
+                        resume_index = i + 1
                 
                 restored_pubs.append({
                     'gao_number': row['gao_number'],
@@ -579,13 +593,19 @@ with st.sidebar:
                     'current_topics': original,
                     'assigned_topics': assigned,
                     'report_url': f"https://www.gao.gov/products/{row['gao_number']}",
-                    'notes': row['notes'] if pd.notna(row['notes']) else ""
+                    'notes': row['notes'] if pd.notna(row.get('notes', '')) else ""
                 })
             
             st.session_state.publications = restored_pubs
             st.session_state.current_index = resume_index
-            st.session_state.loaded_file = f"Restored ({len(restored_pubs)} pubs)"
-            st.success(f"✓ Restored! Resuming at #{resume_index + 1}")
+            st.session_state.loaded_file = f"Restored from CSV"
+            
+            # Build message with note if old format
+            msg = f"✓ Restored {len(restored_pubs)} publications. Resuming at #{resume_index + 1} of {len(restored_pubs)}."
+            if not has_reviewed_col:
+                msg += " (Note: Older CSV format - resume point based on detected changes only)"
+            
+            st.session_state.restore_message = msg
             st.rerun()
             
         except Exception as e:
@@ -645,6 +665,11 @@ if uploaded_file and (not st.session_state.loaded_file or st.session_state.loade
 # Header
 st.markdown('<p class="header-title">Month in Review: Topic Assignment</p>', unsafe_allow_html=True)
 st.markdown("---")
+
+# Show restore message if present
+if st.session_state.restore_message:
+    st.success(st.session_state.restore_message)
+    st.session_state.restore_message = None  # Clear after showing
 
 # State: No document loaded
 if st.session_state.publications is None:
