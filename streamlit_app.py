@@ -463,20 +463,38 @@ def create_markdown_output(publications, topics):
     return '\n'.join(output_lines)
 
 def get_progress_csv():
-    """Generate CSV of current progress."""
+    """Generate CSV of current progress with additional topics in separate columns."""
     if not st.session_state.publications:
         return ""
     
+    # First pass: find max number of additional topics across all pubs
+    max_additional = 0
+    for pub in st.session_state.publications:
+        original = set(pub['current_topics'])
+        assigned = set(pub.get('assigned_topics', pub['current_topics']))
+        additional = assigned - original
+        max_additional = max(max_additional, len(additional))
+    
     df_data = []
     for pub in st.session_state.publications:
-        df_data.append({
+        original = set(pub['current_topics'])
+        assigned = set(pub.get('assigned_topics', pub['current_topics']))
+        additional = sorted(assigned - original)  # Topics that were added
+        
+        row = {
             'gao_number': pub['gao_number'],
             'title': pub['title'],
             'date': pub['date'],
             'original_topics': ' | '.join(pub['current_topics']),
-            'assigned_topics': ' | '.join(pub.get('assigned_topics', pub['current_topics'])),
             'notes': pub.get('notes', '')
-        })
+        }
+        
+        # Add columns for additional topics
+        for i in range(max_additional):
+            col_name = f'additional_topic{i + 1}'
+            row[col_name] = additional[i] if i < len(additional) else ""
+        
+        df_data.append(row)
     
     df = pd.DataFrame(df_data)
     return df.to_csv(index=False)
@@ -679,7 +697,8 @@ else:
         "Select all applicable topics",
         options=ALL_TOPICS,
         default=current_assigned,
-        label_visibility="collapsed"
+        label_visibility="collapsed",
+        key=f"topics_{idx}"
     )
     
     # Notes
@@ -687,7 +706,8 @@ else:
         "Notes (optional)",
         value=pub.get('notes', ''),
         height=60,
-        placeholder="Add comments or questions..."
+        placeholder="Add comments or questions...",
+        key=f"notes_{idx}"
     )
     
     # Navigation buttons
