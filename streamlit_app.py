@@ -476,7 +476,7 @@ def get_progress_csv():
         max_additional = max(max_additional, len(additional))
     
     df_data = []
-    for pub in st.session_state.publications:
+    for i, pub in enumerate(st.session_state.publications):
         original = set(pub['current_topics'])
         assigned = set(pub.get('assigned_topics', pub['current_topics']))
         additional = sorted(assigned - original)  # Topics that were added
@@ -486,13 +486,14 @@ def get_progress_csv():
             'title': pub['title'],
             'date': pub['date'],
             'original_topics': ' | '.join(pub['current_topics']),
-            'notes': pub.get('notes', '')
+            'notes': pub.get('notes', ''),
+            'reviewed': 'Y' if i < st.session_state.current_index else ''
         }
         
         # Add columns for additional topics
-        for i in range(max_additional):
-            col_name = f'additional_topic{i + 1}'
-            row[col_name] = additional[i] if i < len(additional) else ""
+        for j in range(max_additional):
+            col_name = f'additional_topic{j + 1}'
+            row[col_name] = additional[j] if j < len(additional) else ""
         
         df_data.append(row)
     
@@ -533,6 +534,62 @@ with st.sidebar:
             "text/csv",
             use_container_width=True
         )
+    
+    # Restore from CSV option
+    st.markdown("---")
+    st.markdown("**Restore Progress**")
+    
+    restore_file = st.file_uploader(
+        "Upload progress CSV",
+        type=['csv'],
+        help="Upload a previously saved progress CSV to continue where you left off",
+        label_visibility="collapsed",
+        key="restore_csv"
+    )
+    
+    if restore_file:
+        try:
+            df = pd.read_csv(restore_file)
+            
+            # Reconstruct publications from CSV
+            restored_pubs = []
+            resume_index = 0
+            
+            for i, row in df.iterrows():
+                # Parse original topics
+                original = row['original_topics'].split(' | ') if pd.notna(row['original_topics']) and row['original_topics'] else []
+                
+                # Collect additional topics from columns
+                additional = []
+                for col in df.columns:
+                    if col.startswith('additional_topic') and pd.notna(row[col]) and row[col]:
+                        additional.append(row[col])
+                
+                # Assigned = original + additional
+                assigned = original + additional
+                
+                # Track if reviewed
+                if 'reviewed' in df.columns and pd.notna(row['reviewed']) and row['reviewed'] == 'Y':
+                    resume_index = i + 1
+                
+                restored_pubs.append({
+                    'gao_number': row['gao_number'],
+                    'title': row['title'],
+                    'date': row['date'] if pd.notna(row['date']) else "",
+                    'current_topics': original,
+                    'assigned_topics': assigned,
+                    'report_url': f"https://www.gao.gov/products/{row['gao_number']}",
+                    'notes': row['notes'] if pd.notna(row['notes']) else ""
+                })
+            
+            st.session_state.publications = restored_pubs
+            st.session_state.current_index = resume_index
+            st.session_state.loaded_file = f"Restored ({len(restored_pubs)} pubs)"
+            st.success(f"✓ Restored! Resuming at #{resume_index + 1}")
+            st.rerun()
+            
+        except Exception as e:
+            st.error(f"Error reading CSV: {e}")
 
 # =============================================================================
 # FILE PROCESSING
