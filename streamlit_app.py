@@ -29,13 +29,23 @@ st.markdown("""
     
     /* Reduce default top padding */
     .main .block-container {
-        padding-top: 0.75rem;
+        padding-top: 0.5rem;
         padding-bottom: 0.5rem;
+    }
+    
+    /* Reduce gaps in vertical blocks */
+    [data-testid="stVerticalBlock"] {
+        gap: 0.15rem !important;
     }
     
     /* Reduce spacing between all elements */
     .element-container {
-        margin-bottom: 0.25rem;
+        margin-bottom: 0.15rem !important;
+    }
+    
+    /* Extra tight spacing for elements right after header */
+    [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlockBorderWrapper"]:first-child {
+        margin-bottom: 0 !important;
     }
     
     /* Header title - larger */
@@ -43,14 +53,29 @@ st.markdown("""
         color: #002147;
         font-size: 2.25rem;
         font-weight: 700;
-        margin: 0;
-        margin-bottom: 6px;
+        margin: 0 !important;
+        padding: 0 !important;
+        margin-bottom: 2px !important;
     }
     
-    /* Horizontal rule - tighter */
+    /* Horizontal rule - much tighter */
     hr {
-        margin-top: 6px;
-        margin-bottom: 8px;
+        margin-top: 2px !important;
+        margin-bottom: 4px !important;
+    }
+    
+    /* Markdown paragraphs - reduce default margins */
+    .stMarkdown p {
+        margin-bottom: 0.25rem;
+    }
+    
+    /* Reduce spacing around horizontal dividers */
+    [data-testid="stMarkdownContainer"] hr {
+        margin-top: 2px !important;
+        margin-bottom: 4px !important;
+    }
+    [data-testid="stMarkdownContainer"]:has(hr) {
+        margin-bottom: 0 !important;
     }
     
     /* Section headers */
@@ -116,20 +141,22 @@ st.markdown("""
         background-color: #002147;
     }
     
-    /* Link button styling - smaller */
-    .stLinkButton > a {
-        background-color: #3d6a99;
-        color: white;
-        border: none;
-        padding: 3px 10px;
-        border-radius: 4px;
-        font-weight: 500;
-        font-size: 0.8rem;
-        text-decoration: none;
+    /* Link button styling - match regular buttons exactly */
+    .stLinkButton a {
+        background-color: #3d6a99 !important;
+        color: white !important;
+        border: none !important;
+        padding: 3px 10px !important;
+        border-radius: 4px !important;
+        font-weight: 500 !important;
+        font-size: 0.8rem !important;
+        text-decoration: none !important;
+        display: inline-block;
+        line-height: 1.4;
     }
-    .stLinkButton > a:hover {
-        background-color: #002147;
-        color: white;
+    .stLinkButton a:hover {
+        background-color: #002147 !important;
+        color: white !important;
     }
     
     /* Success message */
@@ -140,7 +167,8 @@ st.markdown("""
     
     /* Progress bar */
     .stProgress {
-        margin-bottom: 2px;
+        margin-top: 0 !important;
+        margin-bottom: 0 !important;
     }
     .stProgress > div > div {
         height: 6px;
@@ -148,8 +176,13 @@ st.markdown("""
     
     /* Caption under progress bar */
     .stCaption {
-        margin-top: 0;
-        margin-bottom: 4px;
+        margin-top: 0 !important;
+        margin-bottom: 2px !important;
+        padding-top: 0 !important;
+    }
+    [data-testid="stCaptionContainer"] {
+        margin-top: 0 !important;
+        margin-bottom: 2px !important;
     }
     
     /* Multiselect - tighter */
