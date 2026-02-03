@@ -78,9 +78,9 @@ st.markdown("""
         margin-bottom: 0;
     }
     
-    /* Current topics display - pill-like sizing */
+    /* Current topics display - match button font size */
     .current-topics {
-        font-size: 0.8rem;
+        font-size: 0.875rem;
         color: #856404;
         background: #fff3cd;
         padding: 6px 10px;
@@ -149,6 +149,20 @@ st.markdown("""
         margin-bottom: 6px;
     }
     
+    /* Multiselect pills - match button font size, no truncation */
+    .stMultiSelect [data-baseweb="tag"] {
+        font-size: 0.875rem;
+        max-width: none;
+        white-space: normal;
+        height: auto;
+        padding: 4px 8px;
+    }
+    .stMultiSelect [data-baseweb="tag"] span {
+        white-space: normal;
+        overflow: visible;
+        text-overflow: unset;
+    }
+    
     /* Text area - smaller */
     .stTextArea {
         margin-bottom: 6px;
@@ -213,10 +227,10 @@ st.markdown("""
 # =============================================================================
 ALL_TOPICS = [
     "Agriculture and Food",
-    "Auditing & Financial Mgmt",
+    "Auditing & Financial Management",
     "Budget & Spending",
     "Business Regulation & Consumer Protection",
-    "CORONAVIRUS OVERSIGHT",
+    "Coronavirus Oversight",
     "Economic Development",
     "Education",
     "Employment",
@@ -250,9 +264,10 @@ ALL_TOPICS = [
 # Mapping from PoolParty format to official GAO names
 TOPIC_MAP = {
     "AGRICULTURE AND FOOD": "Agriculture and Food",
-    "AUDITING AND FINANCIAL MANAGEMENT": "Auditing & Financial Mgmt",
+    "AUDITING AND FINANCIAL MANAGEMENT": "Auditing & Financial Management",
     "BUDGET AND SPENDING": "Budget & Spending",
     "BUSINESS REGULATION AND CONSUMER PROTECTION": "Business Regulation & Consumer Protection",
+    "CORONAVIRUS OVERSIGHT": "Coronavirus Oversight",
     "ECONOMIC DEVELOPMENT": "Economic Development",
     "EDUCATION": "Education",
     "EMPLOYMENT": "Employment",
