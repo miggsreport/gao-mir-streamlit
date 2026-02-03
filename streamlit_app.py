@@ -647,10 +647,6 @@ else:
     idx = st.session_state.current_index
     total = len(st.session_state.publications)
     
-    # Progress bar
-    st.progress(idx / total)
-    st.caption(f"Publication {idx + 1} of {total}")
-    
     # Publication card
     st.markdown(f'''
     <div class="pub-card">
