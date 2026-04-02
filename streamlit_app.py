@@ -445,10 +445,11 @@ with st.sidebar:
         st.download_button(
             "⬇ Download Current Progress",
             csv,
-            f"progress_{st.session_state.current_index}_of_{len(st.session_state.publications)}.csv",
+            f"progress_{st.session_state.current_index + 1}_of_{len(st.session_state.publications)}.csv",
             "text/csv",
             help="Manual backup - download work to your computer",
-            use_container_width=True
+            use_container_width=True,
+            key="download_progress_btn"
         )
 
 # =============================================================================
@@ -594,15 +595,17 @@ elif st.session_state.current_index >= len(st.session_state.publications):
 else:
     pub = st.session_state.publications[st.session_state.current_index]
     
-    # Progress info above progress bar
-    progress_pct = int((st.session_state.current_index / len(st.session_state.publications)) * 100)
+    # Progress info above progress bar (1-based counting for display)
+    progress_pct = int(((st.session_state.current_index + 1) / len(st.session_state.publications)) * 100)
     col_a, col_b = st.columns(2)
     with col_a:
         st.caption(f"**Publications:** {len(st.session_state.publications)}")
     with col_b:
-        st.caption(f"**Progress:** {st.session_state.current_index} / {len(st.session_state.publications)} ({progress_pct}%)")
+        # Show 1-based progress (publication 1 of 85, not 0 of 85)
+        current_pub_number = st.session_state.current_index + 1
+        st.caption(f"**Progress:** {current_pub_number} / {len(st.session_state.publications)} ({progress_pct}%)")
     
-    # Progress bar
+    # Progress bar (0-based is fine for the bar itself)
     progress = st.session_state.current_index / len(st.session_state.publications)
     st.progress(progress)
     
@@ -637,21 +640,32 @@ else:
     
     with col1:
         if st.button("⬅ Previous", disabled=st.session_state.current_index == 0, use_container_width=True):
+            # Save current publication's changes
             st.session_state.publications[st.session_state.current_index]['assigned_topics'] = selected_topics
             st.session_state.publications[st.session_state.current_index]['notes'] = notes
-            st.session_state.current_index -= 1
+            # Move to previous
+            st.session_state.current_index = max(0, st.session_state.current_index - 1)
+            st.rerun()
     
     with col2:
         if st.button("No Changes →", use_container_width=True):
+            # Save current publication's state (even if "no changes", user might have edited)
             st.session_state.publications[st.session_state.current_index]['assigned_topics'] = selected_topics
             st.session_state.publications[st.session_state.current_index]['notes'] = notes
-            st.session_state.current_index += 1
+            # Move to next if not at end
+            if st.session_state.current_index < len(st.session_state.publications) - 1:
+                st.session_state.current_index += 1
+            st.rerun()
     
     with col3:
         if st.button("✓ Save & Next", type="primary", use_container_width=True):
+            # Save current publication's changes
             st.session_state.publications[st.session_state.current_index]['assigned_topics'] = selected_topics
             st.session_state.publications[st.session_state.current_index]['notes'] = notes
-            st.session_state.current_index += 1
+            # Move to next if not at end
+            if st.session_state.current_index < len(st.session_state.publications) - 1:
+                st.session_state.current_index += 1
+            st.rerun()
     
     # Auto-save to browser localStorage after any button click
     import json
