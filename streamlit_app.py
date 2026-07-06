@@ -622,13 +622,19 @@ else:
     
     current_assigned = pub.get('assigned_topics', pub['current_topics'])
     
+    # ---- SANITIZE DEFAULT TOPICS BEFORE MULTISELECT ----
+    current_assigned = pub.get('assigned_topics', pub['current_topics'])
+
+    # Ensure only valid topics appear as defaults
+    valid_assigned = [t for t in current_assigned if t in ALL_TOPICS]
+
     selected_topics = st.multiselect(
         "Select all applicable topics",
         options=ALL_TOPICS,
-        default=current_assigned,
+        default=valid_assigned,
         label_visibility="collapsed"
     )
-    
+ 
     notes = st.text_area(
         "Notes (optional)",
         value=pub.get('notes', ''),
